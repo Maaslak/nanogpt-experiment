@@ -3,9 +3,9 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="src",
+    name="nanogpt-exp",
     version="0.0.1",
-    description="Describe Your Cool Project",
+    description="NanoGPT Experimentation",
     author="",
     author_email="",
     url="https://github.com/user/project",
