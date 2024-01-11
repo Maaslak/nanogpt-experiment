@@ -1,0 +1,25 @@
+_target_: nanogpt.models.gpt_module.NanoGPTLitModule
+
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: 1e-4
+  # weight_decay: 0.0
+
+# scheduler:
+#   _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+#   _partial_: true
+#   mode: min
+#   factor: 0.1
+#   patience: 10
+
+net:
+  _target_: nanogpt.models.components.gpt.NanoGPT
+  vocab_size: 500
+  embedding_dim: 24
+  block_size: 10
+  n_heads: 4
+  n_blocks: 1
+
+# compile model for faster training with pytorch 2.0
+compile: false

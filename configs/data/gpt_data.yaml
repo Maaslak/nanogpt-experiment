@@ -1,0 +1,10 @@
+_target_: nanogpt.data.gpt_datamodule.NanoGPTDataModule
+# data_dir: ${paths.data_dir} TODO do similar to vocab size
+dataset_name: "WikiText2"
+vocab_size: 500
+block_size: 10
+batch_size: 8
+min_len: 100
+force_tokenizer_retrain: False
+num_workers: 3
+pin_memory: False
