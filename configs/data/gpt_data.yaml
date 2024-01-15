@@ -1,9 +1,9 @@
 _target_: nanogpt.data.gpt_datamodule.NanoGPTDataModule
-# data_dir: ${paths.data_dir} TODO do similar to vocab size
+tokenizer_template: ${paths.output_dir}/data/tokenizer/tokenizer_vocab_{vocab_size}.json"
 dataset_name: "WikiText2"
 vocab_size: 500
-block_size: 10
-batch_size: 8
+block_size: 30
+batch_size: 1024
 min_len: 100
 force_tokenizer_retrain: False
 num_workers: 3

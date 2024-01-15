@@ -15,11 +15,11 @@ optimizer:
 
 net:
   _target_: nanogpt.models.components.gpt.NanoGPT
-  vocab_size: 500
-  embedding_dim: 24
-  block_size: 10
+  vocab_size: ${data.vocab_size}
+  embedding_dim:48
+  block_size: ${data.block_size}
   n_heads: 4
-  n_blocks: 1
+  n_blocks: 3
 
 # compile model for faster training with pytorch 2.0
 compile: false

@@ -18,9 +18,8 @@ class NanoGPTLitModule(lightning.LightningModule):
     ):
         super().__init__()
 
-        self.save_hyperparameters(logger=False)
+        self.save_hyperparameters()
         self.net = net
-
         self.train_loss = MeanMetric()
         self.val_loss = MeanMetric()
         self.test_loss = MeanMetric()
@@ -69,6 +68,8 @@ class NanoGPTLitModule(lightning.LightningModule):
         self.val_loss(loss)
         self.log("val/loss", self.val_loss, on_step=False, on_epoch=True, prog_bar=True)
 
+    # todo on valid end add generation examples
+
     def test_step(self, batch, batch_idx):
         loss, _, _ = self.model_step(batch)
 
@@ -77,13 +78,19 @@ class NanoGPTLitModule(lightning.LightningModule):
 
     def forward(self, batch, max_compl=50) -> Any:
         compl = torch.concat(
-            [batch, torch.zeros((*batch.shape[:-1], max_compl), dtype=torch.long)], dim=1
+            [
+                batch,
+                torch.zeros((*batch.shape[:-1], max_compl - batch.shape[-1]), dtype=torch.long),
+            ],
+            dim=1,
         )
         last_id = batch.shape[-1]
-        for i in range(last_id + 1, max_compl + last_id):
-            start = max(last_id, i - self.net.block_size)
-            logits= self.net(compl[..., start:i])
-            proba = torch.nn.functional.softmax(logits[..., i - start - 1, :], dim=-1)
+        for i in range(last_id, max_compl):
+            start_id = max(0, i - self.net.block_size + 1)
+            end_id = start_id + self.net.block_size
+            context = compl[..., start_id:end_id]
+            logits = self.net(context)
+            proba = torch.nn.functional.softmax(logits[..., i - start_id, :], dim=-1)
             compl[..., i] = torch.multinomial(proba, 1).view(-1)
 
         return compl

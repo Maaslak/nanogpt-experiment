@@ -20,9 +20,10 @@ def _data_gen(dataset):
     yield from loader
 
 
-def _train_tokenizer(dataset, vocab_size):
+def _train_tokenizer(dataset, vocab_size, whitespace_tok_enabled=True):
     tokenizer = Tokenizer(BPE())
-    tokenizer.pre_tokenizer = Whitespace()
+    if whitespace_tok_enabled:
+        tokenizer.pre_tokenizer = Whitespace()
     tokenizer_trainer = BpeTrainer(vocab_size=vocab_size, special_tokens=["<unk>"])
     tokenizer.train_from_iterator(_data_gen(dataset=dataset), trainer=tokenizer_trainer)
 
@@ -46,6 +47,7 @@ class NanoGPTDataModule(lightning.LightningDataModule):
         min_len: int = 100,
         force_tokenizer_retrain: bool = False,
         tokenizer_template: str = "data/tokenizer/tokenizer_vocab_{vocab_size}.json",
+        whitespace_tok_enabled: bool = True,
         num_workers: int = 0,
         pin_memory: bool = False,
     ):
@@ -70,11 +72,11 @@ class NanoGPTDataModule(lightning.LightningDataModule):
                 )
             self.batch_size_per_device = self.hparams.batch_size // self.trainer.world_size
 
-        tokenizer = PreTrainedTokenizerFast(tokenizer_file=str(self.tokenizer_path))
+        self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=str(self.tokenizer_path))
 
         def preprocess(dataset: IterableDataset):
             return (
-                dataset.map(lambda x: tokenizer.encode(x))
+                dataset.map(lambda x: self.tokenizer.encode(x))
                 .filter(lambda x: len(x) > self.hparams.min_len)
                 .flatmap(
                     lambda text: [
@@ -101,7 +103,11 @@ class NanoGPTDataModule(lightning.LightningDataModule):
         if not self.tokenizer_path.exists() or self.force_tokenizer_retrain:
             logger.info("Training tokenizer")
             raw_train, _, _ = datasets
-            tokenizer_slow = _train_tokenizer(raw_train, vocab_size=self.hparams.vocab_size)
+            tokenizer_slow = _train_tokenizer(
+                raw_train,
+                vocab_size=self.hparams.vocab_size,
+                whitespace_tok_enabled=self.hparams.whitespace_tok_enabled,
+            )
             logger.info("Saving tokenizer uder %s", self.tokenizer_path)
             self.tokenizer_path.parent.mkdir(exist_ok=True, parents=True)
             with open(self.tokenizer_path, "w") as fp:
